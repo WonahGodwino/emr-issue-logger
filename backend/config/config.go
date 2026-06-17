@@ -1,10 +1,13 @@
 package config
 
 import (
+    "bytes"
     "log"
     "os"
+    "path/filepath"
     "strconv"
     "time"
+
     "github.com/joho/godotenv"
 )
 
@@ -22,9 +25,77 @@ type Config struct {
     Environment           string
 }
 
+func findProjectRoot() string {
+    // Start from the executable path (handles go run temp builds)
+    if exe, err := os.Executable(); err == nil {
+        for dir := filepath.Dir(exe); len(dir) > 3; dir = filepath.Dir(dir) {
+            if _, err := os.Stat(filepath.Join(dir, "backend", "go.mod")); err == nil {
+                return dir
+            }
+        }
+    }
+    // Fallback: start from CWD and walk up
+    if cwd, err := os.Getwd(); err == nil {
+        for dir := cwd; len(dir) > 3; dir = filepath.Dir(dir) {
+            if _, err := os.Stat(filepath.Join(dir, "backend", "go.mod")); err == nil {
+                return dir
+            }
+        }
+    }
+    return "."
+}
+
+func findEnvFile() string {
+    root := findProjectRoot()
+
+    candidates := []string{
+        // backend/.env relative to project root
+        filepath.Join(root, "backend", ".env"),
+        // .env at project root
+        filepath.Join(root, ".env"),
+        // Fallback: current directory
+        ".env",
+        filepath.Join("backend", ".env"),
+    }
+
+    for _, p := range candidates {
+        if _, err := os.Stat(p); err == nil {
+            log.Printf("Found .env at: %s", p)
+            return p
+        }
+    }
+
+    log.Printf("Searched for .env in: %v", candidates)
+    return ".env"
+}
+
+func loadEnvFile(path string) error {
+    data, err := os.ReadFile(path)
+    if err != nil {
+        return err
+    }
+    // Strip UTF-8 BOM if present
+    data = bytes.TrimPrefix(data, []byte{0xEF, 0xBB, 0xBF})
+
+    m, err := godotenv.UnmarshalBytes(data)
+    if err != nil {
+        return err
+    }
+
+    for k, v := range m {
+        if os.Getenv(k) == "" {
+            os.Setenv(k, v)
+        }
+    }
+    return nil
+}
+
 func LoadConfig() *Config {
-    if err := godotenv.Load(); err != nil {
-        log.Println("No .env file found, using environment variables")
+    envFile := findEnvFile()
+    if err := loadEnvFile(envFile); err != nil {
+        log.Printf("Failed to load .env from %s: %v. Using environment variables.", envFile, err)
+    } else {
+        log.Printf("Successfully loaded config from %s", envFile)
     }
 
     accessExpiry, _ := time.ParseDuration(getEnv("JWT_ACCESS_EXPIRY", "15m"))

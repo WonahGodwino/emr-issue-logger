@@ -10,6 +10,7 @@ type Facility struct {
     Name       string    `json:"name"`
     Code       string    `json:"code"`
     Type       string    `json:"type"`
+    LGA        string    `json:"lga"`
     CreatedAt  time.Time `json:"createdAt"`
     UpdatedAt  time.Time `json:"updatedAt"`
 }

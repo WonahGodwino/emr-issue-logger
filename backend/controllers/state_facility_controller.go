@@ -1,9 +1,12 @@
 package controllers
 
 import (
+    "encoding/csv"
     "fmt"
     "net/http"
+    "strings"
     "time"
+
     "github.com/gin-gonic/gin"
     "github.com/WonahGodwino/emr-issue-logger/backend/database"
     "github.com/WonahGodwino/emr-issue-logger/backend/models"
@@ -82,7 +85,7 @@ func (sfc *StateFacilityController) UpdateState(c *gin.Context) {
     }
 
     col := sfc.DB.Bucket.DefaultCollection()
-    getResult, err := col.Get("state::" + stateID, nil)
+    getResult, err := col.Get("state::"+stateID, nil)
     if err != nil {
         c.JSON(http.StatusNotFound, gin.H{"error": "State not found"})
         return
@@ -140,12 +143,12 @@ type CreateFacilityRequest struct {
     Name string `json:"name" binding:"required"`
     Code string `json:"code" binding:"required"`
     Type string `json:"type" binding:"required"`
+    LGA  string `json:"lga"`
 }
 
 func (sfc *StateFacilityController) CreateFacility(c *gin.Context) {
     stateID := c.Param("stateId")
 
-    // Verify state exists
     col := sfc.DB.Bucket.DefaultCollection()
     if _, err := col.Get("state::"+stateID, nil); err != nil {
         c.JSON(http.StatusNotFound, gin.H{"error": "State not found"})
@@ -167,6 +170,7 @@ func (sfc *StateFacilityController) CreateFacility(c *gin.Context) {
         Name:       req.Name,
         Code:       req.Code,
         Type:       req.Type,
+        LGA:        req.LGA,
         CreatedAt:  time.Now(),
         UpdatedAt:  time.Now(),
     }
@@ -227,6 +231,7 @@ func (sfc *StateFacilityController) UpdateFacility(c *gin.Context) {
     facility.Name = req.Name
     facility.Code = req.Code
     facility.Type = req.Type
+    facility.LGA = req.LGA
     facility.UpdatedAt = time.Now()
 
     if _, err := col.Replace(facility.ID, facility, nil); err != nil {
@@ -249,12 +254,13 @@ func (sfc *StateFacilityController) DeleteFacility(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{"message": "Facility deleted"})
 }
 
-// ─────────────────── BULK UPLOAD ───────────────────────
+// ─────────────────────── BULK JSON UPLOAD ───────────────────────
 
 type BulkFacilityEntry struct {
     Name string `json:"name" binding:"required"`
     Code string `json:"code" binding:"required"`
     Type string `json:"type" binding:"required"`
+    LGA  string `json:"lga"`
 }
 
 type BulkUploadRequest struct {
@@ -264,7 +270,6 @@ type BulkUploadRequest struct {
 func (sfc *StateFacilityController) BulkUploadFacilities(c *gin.Context) {
     stateID := c.Param("stateId")
 
-    // Verify state exists
     col := sfc.DB.Bucket.DefaultCollection()
     if _, err := col.Get("state::"+stateID, nil); err != nil {
         c.JSON(http.StatusNotFound, gin.H{"error": "State not found"})
@@ -280,8 +285,8 @@ func (sfc *StateFacilityController) BulkUploadFacilities(c *gin.Context) {
     created := []models.Facility{}
     failed := []gin.H{}
 
-    for _, entry := range req.Facilities {
-        facilityID := fmt.Sprintf("FC-%d-%d", time.Now().UnixMilli(), len(created))
+    for i, entry := range req.Facilities {
+        facilityID := fmt.Sprintf("FC-%d-%d", time.Now().UnixMilli(), i)
         facility := models.Facility{
             DocType:    "facility",
             ID:         "facility::" + facilityID,
@@ -290,6 +295,7 @@ func (sfc *StateFacilityController) BulkUploadFacilities(c *gin.Context) {
             Name:       entry.Name,
             Code:       entry.Code,
             Type:       entry.Type,
+            LGA:        entry.LGA,
             CreatedAt:  time.Now(),
             UpdatedAt:  time.Now(),
         }
@@ -302,6 +308,121 @@ func (sfc *StateFacilityController) BulkUploadFacilities(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, gin.H{
+        "created": len(created),
+        "failed":  len(failed),
+        "details": gin.H{
+            "createdList": created,
+            "failedList":  failed,
+        },
+    })
+}
+
+// ─────────────────────── CSV TEMPLATE DOWNLOAD ───────────────────────
+
+func (sfc *StateFacilityController) DownloadCSVTemplate(c *gin.Context) {
+    c.Header("Content-Type", "text/csv")
+    c.Header("Content-Disposition", "attachment; filename=facilities_template.csv")
+
+    writer := csv.NewWriter(c.Writer)
+    writer.Write([]string{"name", "code", "type", "lga"})
+    writer.Write([]string{"General Hospital Ikeja", "GHI-001", "hospital", "Ikeja"})
+    writer.Write([]string{"Lagos Clinic Apapa", "LCA-002", "clinic", "Apapa"})
+    writer.Flush()
+}
+
+// ─────────────────────── CSV BULK UPLOAD ───────────────────────
+
+func (sfc *StateFacilityController) BulkUploadCSV(c *gin.Context) {
+    stateID := c.Param("stateId")
+
+    col := sfc.DB.Bucket.DefaultCollection()
+    if _, err := col.Get("state::"+stateID, nil); err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "State not found"})
+        return
+    }
+
+    file, _, err := c.Request.FormFile("file")
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "CSV file is required. Use field name 'file'."})
+        return
+    }
+    defer file.Close()
+
+    reader := csv.NewReader(file)
+    reader.TrimLeadingSpace = true
+
+    records, err := reader.ReadAll()
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse CSV: " + err.Error()})
+        return
+    }
+
+    if len(records) < 2 {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "CSV must have a header row and at least one data row"})
+        return
+    }
+
+    // Parse header to find column indexes
+    header := records[0]
+    colIdx := map[string]int{}
+    for i, h := range header {
+        colIdx[strings.ToLower(strings.TrimSpace(h))] = i
+    }
+
+    nameIdx, ok1 := colIdx["name"]
+    codeIdx, ok2 := colIdx["code"]
+    typeIdx, ok3 := colIdx["type"]
+    if !ok1 || !ok2 || !ok3 {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "CSV must have 'name', 'code', and 'type' columns"})
+        return
+    }
+    lgaIdx, hasLga := colIdx["lga"]
+
+    created := []models.Facility{}
+    failed := []gin.H{}
+
+    for i, row := range records[1:] {
+        if len(row) <= nameIdx || len(row) <= codeIdx || len(row) <= typeIdx {
+            failed = append(failed, gin.H{"row": i + 2, "error": "incomplete row"})
+            continue
+        }
+
+        name := strings.TrimSpace(row[nameIdx])
+        code := strings.TrimSpace(row[codeIdx])
+        facType := strings.TrimSpace(row[typeIdx])
+        lga := ""
+        if hasLga && len(row) > lgaIdx {
+            lga = strings.TrimSpace(row[lgaIdx])
+        }
+
+        if name == "" || code == "" || facType == "" {
+            failed = append(failed, gin.H{"row": i + 2, "name": name, "error": "name, code, and type are required"})
+            continue
+        }
+
+        facilityID := fmt.Sprintf("FC-%d-%d", time.Now().UnixMilli(), i)
+        facility := models.Facility{
+            DocType:    "facility",
+            ID:         "facility::" + facilityID,
+            FacilityID: facilityID,
+            StateID:    stateID,
+            Name:       name,
+            Code:       code,
+            Type:       facType,
+            LGA:        lga,
+            CreatedAt:  time.Now(),
+            UpdatedAt:  time.Now(),
+        }
+
+        if _, err := col.Insert(facility.ID, facility, nil); err != nil {
+            failed = append(failed, gin.H{"row": i + 2, "name": name, "error": err.Error()})
+        } else {
+            created = append(created, facility)
+        }
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "total":   len(records) - 1,
         "created": len(created),
         "failed":  len(failed),
         "details": gin.H{

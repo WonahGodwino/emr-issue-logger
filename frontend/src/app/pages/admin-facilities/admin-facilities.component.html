@@ -1,77 +1,131 @@
 <div class="page-container">
   <div class="page-header">
     <h2>Manage Facilities</h2>
+    <p class="subtitle">Register facilities under a configured state</p>
   </div>
 
-  <div class="state-selector">
-    <label>Select State</label>
-    <select [(ngModel)]="selectedStateId" (change)="onStateChange()">
-      <option value="">-- Choose a state --</option>
-      <option *ngFor="let s of states" [value]="s.stateId">{{ s.name }} ({{ s.code }})</option>
-    </select>
+  <!-- State Selector -->
+  <div class="state-selector-card">
+    <div class="state-selector">
+      <label>Select State</label>
+      <select [(ngModel)]="selectedStateId" (change)="onStateChange()">
+        <option value="">-- Choose a state --</option>
+        <option *ngFor="let s of states" [value]="s.stateId">{{ s.name }} ({{ s.code }})</option>
+      </select>
+    </div>
   </div>
 
   <ng-container *ngIf="selectedStateId">
+    <!-- Toolbar -->
     <div class="toolbar">
       <button class="btn btn-primary" (click)="showCreateForm = !showCreateForm; showBulkForm = false">
-        {{ showCreateForm ? 'Cancel' : '+ Add Facility' }}
+        {{ showCreateForm ? '✕ Cancel' : '＋ Add Facility' }}
       </button>
       <button class="btn btn-outline" (click)="showBulkForm = !showBulkForm; showCreateForm = false">
         📋 Bulk Upload
       </button>
     </div>
 
-    <div class="create-card" *ngIf="showCreateForm">
+    <!-- Create Single Facility -->
+    <div class="form-card" *ngIf="showCreateForm">
       <h3>Add Facility to {{ getSelectedStateName() }}</h3>
-      <div class="form-row">
+      <div class="form-grid">
         <div class="form-group">
-          <label>Facility Name</label>
-          <input type="text" [(ngModel)]="newFacility.name" placeholder="e.g. General Hospital Ikeja" />
+          <label>Facility Name *</label>
+          <input type="text" [(ngModel)]="newFacility.name" placeholder="e.g. Calabar General Hospital" />
         </div>
         <div class="form-group">
-          <label>Facility Code</label>
-          <input type="text" [(ngModel)]="newFacility.code" placeholder="e.g. GHI-001" />
+          <label>Facility Code *</label>
+          <input type="text" [(ngModel)]="newFacility.code" placeholder="e.g. CGH-001" />
         </div>
         <div class="form-group">
-          <label>Type</label>
+          <label>Type *</label>
           <select [(ngModel)]="newFacility.type">
-            <option value="hospital">Hospital</option>
-            <option value="clinic">Clinic</option>
-            <option value="health-center">Health Center</option>
-            <option value="teaching-hospital">Teaching Hospital</option>
-            <option value="specialist-center">Specialist Center</option>
-            <option value="pharmacy">Pharmacy</option>
-            <option value="lab">Laboratory</option>
+            <option *ngFor="let ft of facilityTypes" [value]="ft.value">{{ ft.label }}</option>
           </select>
         </div>
-        <button class="btn btn-primary" (click)="createFacility()">Save</button>
+        <div class="form-group">
+          <label>LGA (Local Government Area)</label>
+          <input type="text" [(ngModel)]="newFacility.lga" placeholder="e.g. Yala" />
+        </div>
+        <div class="form-group form-actions">
+          <button class="btn btn-primary" (click)="createFacility()">Save Facility</button>
+        </div>
       </div>
     </div>
 
-    <div class="bulk-card" *ngIf="showBulkForm">
+    <!-- Bulk Upload Card -->
+    <div class="form-card" *ngIf="showBulkForm">
       <h3>Bulk Upload Facilities for {{ getSelectedStateName() }}</h3>
-      <p class="hint">Paste a JSON array. Example: <code>[{{ '{' }}"name": "General Hospital Ikeja", "code": "GHI-001", "type": "hospital"{{ '}' }}, {{ '{' }}"name": "Lagos Clinic", "code": "LC-002", "type": "clinic"{{ '}' }}]</code></p>
-      <textarea [(ngModel)]="bulkJson" rows="8" placeholder='[{"name": "...", "code": "...", "type": "hospital"}, ...]'></textarea>
-      <button class="btn btn-primary" (click)="bulkUpload()">Upload Facilities</button>
+
+      <!-- JSON -->
+      <div class="bulk-section">
+        <h4>Option 1: Paste JSON</h4>
+        <p class="hint">
+          Paste a JSON array. Example:
+          <code>[{{ '{' }}"name": "General Hospital Ikeja", "code": "GHI-001", "type": "hospital", "lga": "Ikeja"{{ '}' }}, {{ '{' }}"name": "Lagos Clinic", "code": "LC-002", "type": "clinic", "lga": "Apapa"{{ '}' }}]</code>
+        </p>
+        <textarea [(ngModel)]="bulkJson" rows="6" placeholder='[{"name": "Facility Name", "code": "FC-001", "type": "hospital", "lga": "LGA Name"}, ...]'></textarea>
+        <button class="btn btn-primary" (click)="bulkUploadJson()">Upload via JSON</button>
+      </div>
+
+      <hr class="divider" />
+
+      <!-- CSV -->
+      <div class="bulk-section">
+        <h4>Option 2: Upload CSV File</h4>
+        <div class="csv-info">
+          <p>Download the template, fill it with your facilities, and upload.</p>
+          <button class="btn btn-sm btn-outline" (click)="downloadTemplate()">📥 Download CSV Template</button>
+        </div>
+        <div class="csv-template-preview">
+          <p class="hint">CSV columns: <code>name</code>, <code>code</code>, <code>type</code>, <code>lga</code></p>
+          <table class="mini-table">
+            <thead>
+              <tr><th>name</th><th>code</th><th>type</th><th>lga</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>General Hospital Ikeja</td><td>GHI-001</td><td>hospital</td><td>Ikeja</td></tr>
+              <tr><td>Lagos Clinic Apapa</td><td>LCA-002</td><td>clinic</td><td>Apapa</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="csv-upload-row">
+          <input #csvFileInput type="file" accept=".csv" (change)="onCsvFileSelected($event)" />
+          <button class="btn btn-primary" (click)="csvUpload()" [disabled]="!selectedCsvFile || csvUploading">
+            {{ csvUploading ? 'Uploading...' : '📤 Upload CSV' }}
+          </button>
+        </div>
+        <p class="file-hint" *ngIf="selectedCsvFile">Selected: {{ selectedCsvFile.name }}</p>
+      </div>
     </div>
 
+    <!-- Facilities Table -->
     <div class="table-card">
+      <div class="table-header-bar">
+        <h3>Facilities in {{ getSelectedStateName() }}</h3>
+        <span class="count-badge">{{ facilities.length }} total</span>
+      </div>
       <table *ngIf="facilities.length > 0">
         <thead>
           <tr>
+            <th>S/N</th>
             <th>Facility Name</th>
             <th>Code</th>
             <th>Type</th>
+            <th>LGA</th>
             <th>Created</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let facility of facilities">
+          <tr *ngFor="let facility of facilities; let i = index">
             <ng-container *ngIf="editingFacility?.facilityId !== facility.facilityId; else editRow">
-              <td>{{ facility.name }}</td>
+              <td class="sn">{{ i + 1 }}</td>
+              <td class="name-cell">{{ facility.name }}</td>
               <td><span class="badge">{{ facility.code }}</span></td>
               <td><span class="type-badge">{{ facility.type }}</span></td>
+              <td>{{ facility.lga || '—' }}</td>
               <td>{{ facility.createdAt | date:'mediumDate' }}</td>
               <td class="actions">
                 <button class="btn btn-sm btn-primary" (click)="startEdit(facility)">Edit</button>
@@ -79,19 +133,15 @@
               </td>
             </ng-container>
             <ng-template #editRow>
-              <td><input type="text" [(ngModel)]="editForm.name" /></td>
-              <td><input type="text" [(ngModel)]="editForm.code" /></td>
+              <td class="sn">{{ i + 1 }}</td>
+              <td><input type="text" [(ngModel)]="editForm.name" class="edit-input" /></td>
+              <td><input type="text" [(ngModel)]="editForm.code" class="edit-input code-input" /></td>
               <td>
-                <select [(ngModel)]="editForm.type">
-                  <option value="hospital">Hospital</option>
-                  <option value="clinic">Clinic</option>
-                  <option value="health-center">Health Center</option>
-                  <option value="teaching-hospital">Teaching Hospital</option>
-                  <option value="specialist-center">Specialist Center</option>
-                  <option value="pharmacy">Pharmacy</option>
-                  <option value="lab">Laboratory</option>
+                <select [(ngModel)]="editForm.type" class="edit-select">
+                  <option *ngFor="let ft of facilityTypes" [value]="ft.value">{{ ft.label }}</option>
                 </select>
               </td>
+              <td><input type="text" [(ngModel)]="editForm.lga" class="edit-input lga-input" /></td>
               <td>{{ facility.createdAt | date:'mediumDate' }}</td>
               <td class="actions">
                 <button class="btn btn-sm btn-primary" (click)="saveEdit()">Save</button>
@@ -101,7 +151,23 @@
           </tr>
         </tbody>
       </table>
-      <p class="empty" *ngIf="facilities.length === 0 && selectedStateId">No facilities in this state yet.</p>
+      <div class="empty-state" *ngIf="facilities.length === 0 && selectedStateId">
+        <div class="empty-icon">🏥</div>
+        <p>No facilities registered in this state yet.</p>
+        <p class="empty-hint">Click "＋ Add Facility" or "📋 Bulk Upload" to add facilities.</p>
+      </div>
     </div>
   </ng-container>
+
+  <!-- No State Selected -->
+  <div class="empty-state" *ngIf="!selectedStateId && states.length > 0">
+    <div class="empty-icon">📍</div>
+    <p>Select a state above to view and manage its facilities.</p>
+  </div>
+
+  <div class="empty-state" *ngIf="states.length === 0">
+    <div class="empty-icon">🗺️</div>
+    <p>No states configured yet.</p>
+    <p class="empty-hint">Go to the States page to register states first.</p>
+  </div>
 </div>

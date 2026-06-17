@@ -1,30 +1,42 @@
 <div class="page-container">
   <div class="page-header">
-    <h2>Manage States</h2>
+    <div>
+      <h2>Manage States</h2>
+      <p class="subtitle">Configure states before registering facilities under them</p>
+    </div>
     <button class="btn btn-primary" (click)="showCreateForm = !showCreateForm">
-      {{ showCreateForm ? 'Cancel' : '+ Add State' }}
+      {{ showCreateForm ? '✕ Cancel' : '＋ Add State' }}
     </button>
   </div>
 
-  <div class="create-card" *ngIf="showCreateForm">
+  <!-- Create State Form -->
+  <div class="form-card" *ngIf="showCreateForm">
     <h3>Create New State</h3>
     <div class="form-row">
       <div class="form-group">
-        <label>State Name</label>
+        <label>State Name *</label>
         <input type="text" [(ngModel)]="newState.name" placeholder="e.g. Lagos" />
       </div>
       <div class="form-group">
-        <label>State Code</label>
-        <input type="text" [(ngModel)]="newState.code" placeholder="e.g. LA" />
+        <label>State Code *</label>
+        <input type="text" [(ngModel)]="newState.code" placeholder="e.g. LA (2-3 letter abbreviation)" />
       </div>
-      <button class="btn btn-primary" (click)="createState()">Save State</button>
+      <div class="form-group form-actions">
+        <button class="btn btn-primary" (click)="createState()">Save State</button>
+      </div>
     </div>
   </div>
 
+  <!-- States Table -->
   <div class="table-card">
+    <div class="table-header-bar">
+      <h3>Registered States</h3>
+      <span class="count-badge">{{ states.length }} total</span>
+    </div>
     <table *ngIf="states.length > 0">
       <thead>
         <tr>
+          <th>S/N</th>
           <th>State Name</th>
           <th>Code</th>
           <th>Created</th>
@@ -32,9 +44,10 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let state of states">
+        <tr *ngFor="let state of states; let i = index">
           <ng-container *ngIf="editingState?.stateId !== state.stateId; else editRow">
-            <td>{{ state.name }}</td>
+            <td class="sn">{{ i + 1 }}</td>
+            <td class="name-cell">{{ state.name }}</td>
             <td><span class="badge">{{ state.code }}</span></td>
             <td>{{ state.createdAt | date:'mediumDate' }}</td>
             <td class="actions">
@@ -43,8 +56,9 @@
             </td>
           </ng-container>
           <ng-template #editRow>
-            <td><input type="text" [(ngModel)]="editForm.name" /></td>
-            <td><input type="text" [(ngModel)]="editForm.code" /></td>
+            <td class="sn">{{ i + 1 }}</td>
+            <td><input type="text" [(ngModel)]="editForm.name" class="edit-input name-input" /></td>
+            <td><input type="text" [(ngModel)]="editForm.code" class="edit-input code-input" /></td>
             <td>{{ state.createdAt | date:'mediumDate' }}</td>
             <td class="actions">
               <button class="btn btn-sm btn-primary" (click)="saveEdit()">Save</button>
@@ -54,6 +68,10 @@
         </tr>
       </tbody>
     </table>
-    <p class="empty" *ngIf="states.length === 0">No states created yet. Add your first state above.</p>
+    <div class="empty-state" *ngIf="states.length === 0">
+      <div class="empty-icon">🗺️</div>
+      <p>No states configured yet.</p>
+      <p class="empty-hint">Click "＋ Add State" to register a state. Facilities can then be assigned under it.</p>
+    </div>
   </div>
 </div>

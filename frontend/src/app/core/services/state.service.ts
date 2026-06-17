@@ -19,8 +19,19 @@ export interface Facility {
   name: string;
   code: string;
   type: string;
+  lga: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BulkUploadResult {
+  total?: number;
+  created: number;
+  failed: number;
+  details: {
+    createdList: Facility[];
+    failedList: { name?: string; row?: number; error: string }[];
+  };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -52,11 +63,11 @@ export class FacilityService {
     return this.http.get<Facility[]>(`${environment.apiUrl}/admin/states/${stateId}/facilities`);
   }
 
-  createFacility(stateId: string, data: { name: string; code: string; type: string }): Observable<Facility> {
+  createFacility(stateId: string, data: { name: string; code: string; type: string; lga?: string }): Observable<Facility> {
     return this.http.post<Facility>(`${environment.apiUrl}/admin/states/${stateId}/facilities`, data);
   }
 
-  updateFacility(stateId: string, facilityId: string, data: { name: string; code: string; type: string }): Observable<Facility> {
+  updateFacility(stateId: string, facilityId: string, data: { name: string; code: string; type: string; lga?: string }): Observable<Facility> {
     return this.http.put<Facility>(`${environment.apiUrl}/admin/states/${stateId}/facilities/${facilityId}`, data);
   }
 
@@ -64,7 +75,17 @@ export class FacilityService {
     return this.http.delete(`${environment.apiUrl}/admin/states/${stateId}/facilities/${facilityId}`);
   }
 
-  bulkUpload(stateId: string, facilities: { name: string; code: string; type: string }[]): Observable<any> {
+  bulkUpload(stateId: string, facilities: { name: string; code: string; type: string; lga?: string }[]): Observable<any> {
     return this.http.post(`${environment.apiUrl}/admin/states/${stateId}/facilities/upload`, { facilities });
+  }
+
+  csvUpload(stateId: string, file: File): Observable<BulkUploadResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<BulkUploadResult>(`${environment.apiUrl}/admin/states/${stateId}/facilities/upload-csv`, formData);
+  }
+
+  downloadTemplate(): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/admin/states/facilities/template`, { responseType: 'blob' });
   }
 }

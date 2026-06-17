@@ -19,7 +19,7 @@ import { filter } from 'rxjs/operators';
       min-height: calc(100vh - 64px);
       background: #f5f7fa;
       transition: margin-left 0.3s ease;
-      padding: 24px;
+      padding: 88px 24px 24px 24px;
     }
     main.with-sidebar {
       margin-left: 250px;

@@ -71,6 +71,7 @@ func SetupRouter(cfg *config.Config, db *database.CouchbaseDB) *gin.Engine {
                     sfc := controllers.NewStateFacilityController(db)
                     superAdmin.POST("", sfc.CreateState)
                     superAdmin.GET("", sfc.GetStates)
+                    superAdmin.GET("/facilities/template", sfc.DownloadCSVTemplate)
                     superAdmin.PUT("/:stateId", sfc.UpdateState)
                     superAdmin.DELETE("/:stateId", sfc.DeleteState)
 
@@ -79,6 +80,7 @@ func SetupRouter(cfg *config.Config, db *database.CouchbaseDB) *gin.Engine {
                         facilities.POST("", sfc.CreateFacility)
                         facilities.GET("", sfc.GetFacilities)
                         facilities.POST("/upload", sfc.BulkUploadFacilities)
+                        facilities.POST("/upload-csv", sfc.BulkUploadCSV)
                         facilities.PUT("/:facilityId", sfc.UpdateFacility)
                         facilities.DELETE("/:facilityId", sfc.DeleteFacility)
                     }
