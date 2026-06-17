@@ -1,0 +1,41 @@
+# Environment files with secrets
+.env
+*.env.local
+
+# Backend binary
+backend/server.exe
+backend/server
+
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Build output
+dist/
+frontend/dist/
+backend/tmp/
+
+# Angular cache
+frontend/.angular/cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Screenshots
+*.png
+*.jpg
+*.jpeg
+
+# Docker
+docker-compose.override.yml

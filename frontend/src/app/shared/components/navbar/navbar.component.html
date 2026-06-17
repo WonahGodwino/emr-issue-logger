@@ -1,0 +1,12 @@
+<nav class="navbar">
+  <div class="navbar-brand">
+    <a routerLink="/dashboard">EMR Issue Logger</a>
+  </div>
+  <div class="navbar-links">
+    <a routerLink="/dashboard">Dashboard</a>
+    <a routerLink="/tickets">My Tickets</a>
+    <a routerLink="/profile">Profile</a>
+    <a *ngIf="authService.isAdmin()" routerLink="/admin/dashboard">Admin</a>
+    <button (click)="logout()">Logout</button>
+  </div>
+</nav>

@@ -1,0 +1,59 @@
+<div class="page-container">
+  <div class="page-header">
+    <h2>Manage States</h2>
+    <button class="btn btn-primary" (click)="showCreateForm = !showCreateForm">
+      {{ showCreateForm ? 'Cancel' : '+ Add State' }}
+    </button>
+  </div>
+
+  <div class="create-card" *ngIf="showCreateForm">
+    <h3>Create New State</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>State Name</label>
+        <input type="text" [(ngModel)]="newState.name" placeholder="e.g. Lagos" />
+      </div>
+      <div class="form-group">
+        <label>State Code</label>
+        <input type="text" [(ngModel)]="newState.code" placeholder="e.g. LA" />
+      </div>
+      <button class="btn btn-primary" (click)="createState()">Save State</button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <table *ngIf="states.length > 0">
+      <thead>
+        <tr>
+          <th>State Name</th>
+          <th>Code</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let state of states">
+          <ng-container *ngIf="editingState?.stateId !== state.stateId; else editRow">
+            <td>{{ state.name }}</td>
+            <td><span class="badge">{{ state.code }}</span></td>
+            <td>{{ state.createdAt | date:'mediumDate' }}</td>
+            <td class="actions">
+              <button class="btn btn-sm btn-primary" (click)="startEdit(state)">Edit</button>
+              <button class="btn btn-sm btn-danger" (click)="deleteState(state)">Delete</button>
+            </td>
+          </ng-container>
+          <ng-template #editRow>
+            <td><input type="text" [(ngModel)]="editForm.name" /></td>
+            <td><input type="text" [(ngModel)]="editForm.code" /></td>
+            <td>{{ state.createdAt | date:'mediumDate' }}</td>
+            <td class="actions">
+              <button class="btn btn-sm btn-primary" (click)="saveEdit()">Save</button>
+              <button class="btn btn-sm btn-outline" (click)="cancelEdit()">Cancel</button>
+            </td>
+          </ng-template>
+        </tr>
+      </tbody>
+    </table>
+    <p class="empty" *ngIf="states.length === 0">No states created yet. Add your first state above.</p>
+  </div>
+</div>

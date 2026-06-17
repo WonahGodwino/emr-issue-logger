@@ -1,0 +1,107 @@
+<div class="page-container">
+  <div class="page-header">
+    <h2>Manage Facilities</h2>
+  </div>
+
+  <div class="state-selector">
+    <label>Select State</label>
+    <select [(ngModel)]="selectedStateId" (change)="onStateChange()">
+      <option value="">-- Choose a state --</option>
+      <option *ngFor="let s of states" [value]="s.stateId">{{ s.name }} ({{ s.code }})</option>
+    </select>
+  </div>
+
+  <ng-container *ngIf="selectedStateId">
+    <div class="toolbar">
+      <button class="btn btn-primary" (click)="showCreateForm = !showCreateForm; showBulkForm = false">
+        {{ showCreateForm ? 'Cancel' : '+ Add Facility' }}
+      </button>
+      <button class="btn btn-outline" (click)="showBulkForm = !showBulkForm; showCreateForm = false">
+        📋 Bulk Upload
+      </button>
+    </div>
+
+    <div class="create-card" *ngIf="showCreateForm">
+      <h3>Add Facility to {{ getSelectedStateName() }}</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Facility Name</label>
+          <input type="text" [(ngModel)]="newFacility.name" placeholder="e.g. General Hospital Ikeja" />
+        </div>
+        <div class="form-group">
+          <label>Facility Code</label>
+          <input type="text" [(ngModel)]="newFacility.code" placeholder="e.g. GHI-001" />
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select [(ngModel)]="newFacility.type">
+            <option value="hospital">Hospital</option>
+            <option value="clinic">Clinic</option>
+            <option value="health-center">Health Center</option>
+            <option value="teaching-hospital">Teaching Hospital</option>
+            <option value="specialist-center">Specialist Center</option>
+            <option value="pharmacy">Pharmacy</option>
+            <option value="lab">Laboratory</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" (click)="createFacility()">Save</button>
+      </div>
+    </div>
+
+    <div class="bulk-card" *ngIf="showBulkForm">
+      <h3>Bulk Upload Facilities for {{ getSelectedStateName() }}</h3>
+      <p class="hint">Paste a JSON array. Example: <code>[{{ '{' }}"name": "General Hospital Ikeja", "code": "GHI-001", "type": "hospital"{{ '}' }}, {{ '{' }}"name": "Lagos Clinic", "code": "LC-002", "type": "clinic"{{ '}' }}]</code></p>
+      <textarea [(ngModel)]="bulkJson" rows="8" placeholder='[{"name": "...", "code": "...", "type": "hospital"}, ...]'></textarea>
+      <button class="btn btn-primary" (click)="bulkUpload()">Upload Facilities</button>
+    </div>
+
+    <div class="table-card">
+      <table *ngIf="facilities.length > 0">
+        <thead>
+          <tr>
+            <th>Facility Name</th>
+            <th>Code</th>
+            <th>Type</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let facility of facilities">
+            <ng-container *ngIf="editingFacility?.facilityId !== facility.facilityId; else editRow">
+              <td>{{ facility.name }}</td>
+              <td><span class="badge">{{ facility.code }}</span></td>
+              <td><span class="type-badge">{{ facility.type }}</span></td>
+              <td>{{ facility.createdAt | date:'mediumDate' }}</td>
+              <td class="actions">
+                <button class="btn btn-sm btn-primary" (click)="startEdit(facility)">Edit</button>
+                <button class="btn btn-sm btn-danger" (click)="deleteFacility(facility)">Delete</button>
+              </td>
+            </ng-container>
+            <ng-template #editRow>
+              <td><input type="text" [(ngModel)]="editForm.name" /></td>
+              <td><input type="text" [(ngModel)]="editForm.code" /></td>
+              <td>
+                <select [(ngModel)]="editForm.type">
+                  <option value="hospital">Hospital</option>
+                  <option value="clinic">Clinic</option>
+                  <option value="health-center">Health Center</option>
+                  <option value="teaching-hospital">Teaching Hospital</option>
+                  <option value="specialist-center">Specialist Center</option>
+                  <option value="pharmacy">Pharmacy</option>
+                  <option value="lab">Laboratory</option>
+                </select>
+              </td>
+              <td>{{ facility.createdAt | date:'mediumDate' }}</td>
+              <td class="actions">
+                <button class="btn btn-sm btn-primary" (click)="saveEdit()">Save</button>
+                <button class="btn btn-sm btn-outline" (click)="cancelEdit()">Cancel</button>
+              </td>
+            </ng-template>
+          </tr>
+        </tbody>
+      </table>
+      <p class="empty" *ngIf="facilities.length === 0 && selectedStateId">No facilities in this state yet.</p>
+    </div>
+  </ng-container>
+</div>

@@ -1,0 +1,23 @@
+<aside class="sidebar">
+  <ul>
+    <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
+    <li><a routerLink="/tickets" routerLinkActive="active">My Tickets</a></li>
+    <li><a routerLink="/tickets/create" routerLinkActive="active">Create Ticket</a></li>
+    <li><a routerLink="/profile" routerLinkActive="active">Profile</a></li>
+    <li *ngIf="authService.isAdmin()" class="admin-section">
+      <span>Admin</span>
+      <ul>
+        <li><a routerLink="/admin/dashboard" routerLinkActive="active">Dashboard</a></li>
+        <li><a routerLink="/admin/tickets" routerLinkActive="active">Manage Tickets</a></li>
+        <li><a routerLink="/admin/users" routerLinkActive="active">Manage Users</a></li>
+      </ul>
+    </li>
+    <li *ngIf="authService.isSuperAdmin()" class="admin-section">
+      <span>Setup</span>
+      <ul>
+        <li><a routerLink="/admin/states" routerLinkActive="active">States</a></li>
+        <li><a routerLink="/admin/facilities" routerLinkActive="active">Facilities</a></li>
+      </ul>
+    </li>
+  </ul>
+</aside>

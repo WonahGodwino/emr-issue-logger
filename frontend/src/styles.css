@@ -1,0 +1,12 @@
+﻿* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background: #f4f7f5; color: #333; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #e8efe9; border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: #096D49; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #0a7d55; }
+.text-center { text-align: center; }
+.text-muted { color: #7a8a80; }
+.mt-1 { margin-top: 10px; }
+.mt-2 { margin-top: 20px; }
+.mb-1 { margin-bottom: 10px; }
+.mb-2 { margin-bottom: 20px; }
