@@ -25,7 +25,7 @@
         <tr *ngFor="let user of users">
           <td class="name-cell">{{ user.fullName }}<br /><span class="username">@{{ user.username }}</span></td>
           <td>{{ user.email }}</td>
-          <td><span class="role-badge" [class.admin]="user.role==='admin'" [class.super-admin]="user.role==='super_admin'">{{ getRoleBadge(user.role) }}</span></td>
+          <td><span class="role-badge" [class.admin]="user.role==='admin'" [ngClass]="{'super-admin': user.role==='super_admin'}">{{ getRoleBadge(user.role) }}</span></td>
           <td>
             <ng-container *ngIf="user.stateIds && user.stateIds.length > 0; else noStates">
               <span class="state-tag" *ngFor="let sid of user.stateIds">{{ getStateName(sid) }}</span>
