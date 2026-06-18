@@ -56,6 +56,9 @@
           <th>Ticket ID</th>
           <th>Title</th>
           <th>Module</th>
+          <th>State</th>
+          <th>Facility</th>
+          <th>LGA</th>
           <th>Status</th>
           <th>Issue</th>
           <th>Created</th>
@@ -69,6 +72,9 @@
           <td><span class="badge">{{ ticket.ticketId }}</span></td>
           <td class="title-cell">{{ ticket.title }}</td>
           <td><span class="module-badge">{{ getModuleLabel(ticket.module) }}</span></td>
+          <td>{{ ticket.stateName || '—' }}</td>
+          <td class="name-cell">{{ ticket.facilityName || '—' }}</td>
+          <td>{{ ticket.facilityLGA || '—' }}</td>
           <td>
             <span class="status-badge" [style.background]="getStatusColor(ticket.status) + '20'" [style.color]="getStatusColor(ticket.status)" [style.border]="'1px solid ' + getStatusColor(ticket.status) + '40'">
               {{ getStatusLabel(ticket.status) }}

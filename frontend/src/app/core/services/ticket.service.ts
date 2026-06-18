@@ -7,6 +7,7 @@ export interface Ticket {
   id: string; ticketId: string; title: string; description: string;
   issue: string; module: string; reporterUserId: string;
   facilityId: string; stateId: string;
+  stateName?: string; facilityName?: string; facilityLGA?: string;
   category: string; orderOfImpact: number;
   isNewRequirement: boolean; status: string; statusHistory: any[];
   assignedTo?: string; resolutionNotes?: string;

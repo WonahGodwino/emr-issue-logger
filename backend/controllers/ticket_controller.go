@@ -62,7 +62,6 @@ func (tc *TicketController) CreateTicket(c *gin.Context) {
     userID, _ := c.Get("user_id")
     email, _ := c.Get("email")
 
-    // Get user to find their facility
     query := "SELECT u.* FROM `" + tc.DB.Config.CouchbaseBucket + "` AS u WHERE u.docType = 'user' AND u.userId = $userID"
     result, _ := tc.DB.ExecuteQuery(query, map[string]interface{}{"userID": userID.(string)})
 
@@ -76,27 +75,37 @@ func (tc *TicketController) CreateTicket(c *gin.Context) {
         }
     }
 
-    // Use provided facilityId or fallback to user's facility
     facilityID := req.FacilityID
     if facilityID == "" {
         facilityID = reporterFacilityID
     }
 
-    // Get state for this facility
-    var stateID string
+    // Resolve state + facility names early
+    var stateID, stateName, facilityName, facilityLGA string
     if facilityID != "" {
-        facQuery := "SELECT f.stateId FROM `" + tc.DB.Config.CouchbaseBucket + "` AS f WHERE f.docType = 'facility' AND f.facilityId = $facID"
+        facQuery := "SELECT f.* FROM `" + tc.DB.Config.CouchbaseBucket + "` AS f WHERE f.docType = 'facility' AND f.facilityId = $facID"
         facResult, _ := tc.DB.ExecuteQuery(facQuery, map[string]interface{}{"facID": facilityID})
         if facResult != nil && facResult.Next() {
-            var row map[string]interface{}
-            if err := facResult.Row(&row); err == nil {
-                stateID = helpers.GetStringFromMap(row, "stateId")
+            var fr map[string]interface{}
+            if err := facResult.Row(&fr); err == nil {
+                stateID = helpers.GetStringFromMap(fr, "stateId")
+                facilityName = helpers.GetStringFromMap(fr, "name")
+                facilityLGA = helpers.GetStringFromMap(fr, "lga")
+            }
+        }
+    }
+    if stateID != "" {
+        stQuery := "SELECT s.name FROM `" + tc.DB.Config.CouchbaseBucket + "` AS s WHERE s.docType = 'state' AND s.stateId = $sid"
+        stResult, _ := tc.DB.ExecuteQuery(stQuery, map[string]interface{}{"sid": stateID})
+        if stResult != nil && stResult.Next() {
+            var sr map[string]interface{}
+            if err := stResult.Row(&sr); err == nil {
+                stateName = helpers.GetStringFromMap(sr, "name")
             }
         }
     }
 
     col := tc.DB.Bucket.DefaultCollection()
-
     ticketID := helpers.GenerateTicketID()
     docID := "ticket::" + ticketID
 
@@ -130,11 +139,14 @@ func (tc *TicketController) CreateTicket(c *gin.Context) {
         StatusHistory: []models.StatusHistory{
             {Status: models.StatusPending, Timestamp: now, UpdatedBy: userIdStr, Note: "Ticket created"},
         },
-        CreatedAt:  now,
-        CreatedBy:  email.(string),
-        UpdatedAt:  now,
-        UpdatedBy:  email.(string),
-        IsRecalled: false,
+        CreatedAt:    now,
+        CreatedBy:    email.(string),
+        UpdatedAt:    now,
+        UpdatedBy:    email.(string),
+        IsRecalled:   false,
+        StateName:    stateName,
+        FacilityName: facilityName,
+        FacilityLGA:  facilityLGA,
     }
 
     if _, err := col.Upsert(docID, ticket, nil); err != nil {
@@ -156,40 +168,39 @@ func (tc *TicketController) GetTickets(c *gin.Context) {
     if role == "user" {
         conditions = append(conditions, "reporterUserId = $userID")
         params = map[string]interface{}{"userID": userID.(string)}
-    } else if role == "admin" {
-        // Get admin's assigned state IDs
-        adminQuery := "SELECT u.stateIds FROM `" + tc.DB.Config.CouchbaseBucket + "` AS u WHERE u.docType = 'user' AND u.userId = $userID"
-        adminResult, _ := tc.DB.ExecuteQuery(adminQuery, map[string]interface{}{"userID": userID.(string)})
-        var adminStateIDs []string
-        if adminResult != nil && adminResult.Next() {
-            var row map[string]interface{}
-            if err := adminResult.Row(&row); err == nil {
-                if raw, ok := row["stateIds"].([]interface{}); ok {
-                    for _, s := range raw {
-                        if str, ok2 := s.(string); ok2 {
-                            adminStateIDs = append(adminStateIDs, str)
+    } else if role == "admin" || role == "super_admin" {
+        if role == "admin" {
+            adminQuery := "SELECT u.stateIds FROM `" + tc.DB.Config.CouchbaseBucket + "` AS u WHERE u.docType = 'user' AND u.userId = $userID"
+            adminResult, _ := tc.DB.ExecuteQuery(adminQuery, map[string]interface{}{"userID": userID.(string)})
+            var adminStateIDs []string
+            if adminResult != nil && adminResult.Next() {
+                var row map[string]interface{}
+                if err := adminResult.Row(&row); err == nil {
+                    if raw, ok := row["stateIds"].([]interface{}); ok {
+                        for _, s := range raw {
+                            if str, ok2 := s.(string); ok2 {
+                                adminStateIDs = append(adminStateIDs, str)
+                            }
                         }
                     }
                 }
             }
-        }
-        if len(adminStateIDs) > 0 {
-            placeholders := []string{}
-            params = map[string]interface{}{}
-            for i, sid := range adminStateIDs {
-                key := fmt.Sprintf("stateID%d", i)
-                placeholders = append(placeholders, "$"+key)
-                params[key] = sid
+            if len(adminStateIDs) > 0 {
+                placeholders := []string{}
+                params = map[string]interface{}{}
+                for i, sid := range adminStateIDs {
+                    key := fmt.Sprintf("stateID%d", i)
+                    placeholders = append(placeholders, "$"+key)
+                    params[key] = sid
+                }
+                conditions = append(conditions, "stateId IN ["+strings.Join(placeholders, ", ")+"]")
+            } else {
+                c.JSON(http.StatusOK, gin.H{"tickets": []models.TicketResponse{}, "count": 0})
+                return
             }
-            conditions = append(conditions, "stateId IN ["+strings.Join(placeholders, ", ")+"]")
-        } else {
-            // No states assigned — return empty
-            c.JSON(http.StatusOK, gin.H{"tickets": []models.TicketResponse{}, "count": 0})
-            return
         }
     }
 
-    // Date filters
     if dateFrom := c.Query("dateFrom"); dateFrom != "" {
         conditions = append(conditions, "createdAt >= $dateFrom")
         if params == nil { params = map[string]interface{}{} }
@@ -217,7 +228,6 @@ func (tc *TicketController) GetTickets(c *gin.Context) {
     }
 
     query = "SELECT * FROM `" + tc.DB.Config.CouchbaseBucket + "` WHERE " + strings.Join(conditions, " AND ") + " ORDER BY createdAt DESC"
-
     if params == nil { params = map[string]interface{}{} }
 
     result, err := tc.DB.ExecuteQuery(query, params)
@@ -226,17 +236,53 @@ func (tc *TicketController) GetTickets(c *gin.Context) {
         return
     }
 
-    var responses []models.TicketResponse
+    var tickets []models.Ticket
     for result.Next() {
         var row map[string]interface{}
         if err := result.Row(&row); err == nil {
             if ticketData, ok := row[tc.DB.Config.CouchbaseBucket].(map[string]interface{}); ok {
-                ticket := helpers.MapToTicket(ticketData)
-                responses = append(responses, ticket.ToResponse())
+                tickets = append(tickets, helpers.MapToTicket(ticketData))
             }
         }
     }
 
+    // Batch-resolve state and facility names
+    stateNames := map[string]string{}
+    facNames := map[string]string{}
+    facLGAs := map[string]string{}
+    if len(tickets) > 0 {
+        stateQuery := "SELECT s.stateId, s.name FROM `" + tc.DB.Config.CouchbaseBucket + "` AS s WHERE s.docType = 'state'"
+        if sResult, sErr := tc.DB.ExecuteQuery(stateQuery, nil); sErr == nil {
+            for sResult.Next() {
+                var sr map[string]interface{}
+                if sErr2 := sResult.Row(&sr); sErr2 == nil {
+                    if sid := helpers.GetStringFromMap(sr, "stateId"); sid != "" {
+                        stateNames[sid] = helpers.GetStringFromMap(sr, "name")
+                    }
+                }
+            }
+        }
+        facQuery := "SELECT f.facilityId, f.name, f.lga FROM `" + tc.DB.Config.CouchbaseBucket + "` AS f WHERE f.docType = 'facility'"
+        if fResult, fErr := tc.DB.ExecuteQuery(facQuery, nil); fErr == nil {
+            for fResult.Next() {
+                var fr map[string]interface{}
+                if fErr2 := fResult.Row(&fr); fErr2 == nil {
+                    if fid := helpers.GetStringFromMap(fr, "facilityId"); fid != "" {
+                        facNames[fid] = helpers.GetStringFromMap(fr, "name")
+                        facLGAs[fid] = helpers.GetStringFromMap(fr, "lga")
+                    }
+                }
+            }
+        }
+    }
+
+    var responses []models.TicketResponse
+    for _, ticket := range tickets {
+        ticket.StateName = stateNames[ticket.StateID]
+        ticket.FacilityName = facNames[ticket.FacilityID]
+        ticket.FacilityLGA = facLGAs[ticket.FacilityID]
+        responses = append(responses, ticket.ToResponse())
+    }
     if responses == nil {
         responses = []models.TicketResponse{}
     }
@@ -258,6 +304,28 @@ func (tc *TicketController) GetTicket(c *gin.Context) {
         if err := result.Row(&row); err == nil {
             if ticketData, ok := row[tc.DB.Config.CouchbaseBucket].(map[string]interface{}); ok {
                 ticket := helpers.MapToTicket(ticketData)
+                // Enrich with names
+                if ticket.FacilityID != "" {
+                    fq := "SELECT f.name, f.lga FROM `" + tc.DB.Config.CouchbaseBucket + "` AS f WHERE f.docType = 'facility' AND f.facilityId = $fid"
+                    fr, _ := tc.DB.ExecuteQuery(fq, map[string]interface{}{"fid": ticket.FacilityID})
+                    if fr != nil && fr.Next() {
+                        var frr map[string]interface{}
+                        if err2 := fr.Row(&frr); err2 == nil {
+                            ticket.FacilityName = helpers.GetStringFromMap(frr, "name")
+                            ticket.FacilityLGA = helpers.GetStringFromMap(frr, "lga")
+                        }
+                    }
+                }
+                if ticket.StateID != "" {
+                    sq := "SELECT s.name FROM `" + tc.DB.Config.CouchbaseBucket + "` AS s WHERE s.docType = 'state' AND s.stateId = $sid"
+                    sr, _ := tc.DB.ExecuteQuery(sq, map[string]interface{}{"sid": ticket.StateID})
+                    if sr != nil && sr.Next() {
+                        var srr map[string]interface{}
+                        if err3 := sr.Row(&srr); err3 == nil {
+                            ticket.StateName = helpers.GetStringFromMap(srr, "name")
+                        }
+                    }
+                }
                 c.JSON(http.StatusOK, ticket.ToResponse())
                 return
             }
@@ -291,7 +359,7 @@ func (tc *TicketController) UpdateTicket(c *gin.Context) {
     role, _ := c.Get("role")
     email, _ := c.Get("email")
 
-    if role != "admin" && ticket.ReporterUserID != userID.(string) {
+    if role != "admin" && role != "super_admin" && ticket.ReporterUserID != userID.(string) {
         c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
         return
     }
@@ -336,7 +404,6 @@ func (tc *TicketController) UpdateTicketStatus(c *gin.Context) {
         return
     }
 
-    // Validate status transition (admin only)
     role, _ := c.Get("role")
     if role != "admin" && role != "super_admin" {
         c.JSON(http.StatusForbidden, gin.H{"error": "Only admins can update ticket status"})
@@ -430,7 +497,6 @@ func (tc *TicketController) UploadScreenshot(c *gin.Context) {
     }
     defer file.Close()
 
-    // Create uploads directory
     uploadDir := "uploads/screenshots"
     os.MkdirAll(uploadDir, 0755)
 
@@ -546,4 +612,3 @@ func (tc *TicketController) RecallTicket(c *gin.Context) {
 
     c.JSON(http.StatusOK, gin.H{"message": "Ticket recalled successfully", "ticket": ticket.ToResponse()})
 }
-

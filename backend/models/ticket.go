@@ -75,6 +75,9 @@ type Ticket struct {
     IsRecalled        bool            `json:"isRecalled"`
     RecalledAt        *time.Time      `json:"recalledAt,omitempty"`
     RecallReason      string          `json:"recallReason,omitempty"`
+    StateName         string          `json:"stateName,omitempty"`
+    FacilityName      string          `json:"facilityName,omitempty"`
+    FacilityLGA       string          `json:"facilityLGA,omitempty"`
 }
 
 type TicketResponse struct {
@@ -106,6 +109,9 @@ type TicketResponse struct {
     IsRecalled        bool            `json:"isRecalled"`
     RecalledAt        *time.Time      `json:"recalledAt,omitempty"`
     RecallReason      string          `json:"recallReason,omitempty"`
+    StateName         string          `json:"stateName,omitempty"`
+    FacilityName      string          `json:"facilityName,omitempty"`
+    FacilityLGA       string          `json:"facilityLGA,omitempty"`
 }
 
 func (t *Ticket) ToResponse() TicketResponse {
@@ -138,5 +144,8 @@ func (t *Ticket) ToResponse() TicketResponse {
         IsRecalled:        t.IsRecalled,
         RecalledAt:        t.RecalledAt,
         RecallReason:      t.RecallReason,
+        StateName:         t.StateName,
+        FacilityName:      t.FacilityName,
+        FacilityLGA:       t.FacilityLGA,
     }
 }
