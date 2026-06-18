@@ -1,1 +1,157 @@
-﻿<div class='page-container'><h2>ManageTickets</h2><p>Content coming soon.</p></div>
+﻿<div class="page-container">
+  <div class="page-header">
+    <h2>Manage Tickets</h2>
+    <p class="subtitle">Review and update EMR issue tickets</p>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Status</label>
+        <select [(ngModel)]="filterStatus">
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="under-review">Under Review</option>
+          <option value="in-progress">In Progress</option>
+          <option value="resolved">Resolved</option>
+          <option value="escalated">Escalated</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>State</label>
+        <select [(ngModel)]="filterStateId">
+          <option value="">All States</option>
+          <option *ngFor="let s of states" [value]="s.stateId">{{ s.name }}</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>From Date</label>
+        <input type="date" [(ngModel)]="filterDateFrom" />
+      </div>
+      <div class="filter-group">
+        <label>To Date</label>
+        <input type="date" [(ngModel)]="filterDateTo" />
+      </div>
+      <div class="filter-actions">
+        <button class="btn btn-primary" (click)="applyFilters()">🔍 Filter</button>
+        <button class="btn btn-outline" (click)="clearFilters()">✕ Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tickets Table -->
+  <div class="table-card">
+    <div class="table-header-bar">
+      <h3>Tickets <span *ngIf="!loading">({{ tickets.length }})</span></h3>
+    </div>
+
+    <div class="loading-container" *ngIf="loading">
+      <p>Loading tickets...</p>
+    </div>
+
+    <table *ngIf="!loading && tickets.length > 0">
+      <thead>
+        <tr>
+          <th>Ticket ID</th>
+          <th>Title</th>
+          <th>Module</th>
+          <th>Status</th>
+          <th>Issue</th>
+          <th>Created</th>
+          <th>Created By</th>
+          <th>Admin Updated</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let ticket of tickets">
+          <td><span class="badge">{{ ticket.ticketId }}</span></td>
+          <td class="title-cell">{{ ticket.title }}</td>
+          <td><span class="module-badge">{{ getModuleLabel(ticket.module) }}</span></td>
+          <td>
+            <span class="status-badge" [style.background]="getStatusColor(ticket.status) + '20'" [style.color]="getStatusColor(ticket.status)" [style.border]="'1px solid ' + getStatusColor(ticket.status) + '40'">
+              {{ getStatusLabel(ticket.status) }}
+            </span>
+          </td>
+          <td class="issue-cell">{{ ticket.issue }}</td>
+          <td>{{ ticket.createdAt | date:'mediumDate' }}</td>
+          <td>{{ ticket.createdBy }}</td>
+          <td>{{ ticket.adminUpdatedAt ? (ticket.adminUpdatedAt | date:'mediumDate') : '—' }}</td>
+          <td class="actions">
+            <button class="btn btn-sm btn-primary" (click)="openStatusUpdate(ticket)">Update Status</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="!loading && tickets.length === 0">
+      <div class="empty-icon">📋</div>
+      <p>No tickets found.</p>
+      <p class="empty-hint">Tickets submitted for your assigned states will appear here.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Status Update Modal -->
+<div class="modal-overlay" *ngIf="selectedTicket" (click)="onOverlayClick($event)">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Update Status — {{ selectedTicket.ticketId }}</h3>
+      <button class="btn-close" (click)="closeStatusModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="ticket-title">{{ selectedTicket.title }}</p>
+
+      <div class="form-group">
+        <label>New Status *</label>
+        <select [(ngModel)]="statusForm.status">
+          <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Resolution Notes</label>
+        <textarea [(ngModel)]="statusForm.resolutionNotes" rows="3" placeholder="Describe the resolution or action taken"></textarea>
+      </div>
+
+      <div class="form-group" *ngIf="statusForm.status === 'escalated'">
+        <label>Escalation Comment *</label>
+        <textarea [(ngModel)]="statusForm.escalationComment" rows="2" placeholder="Reason for escalation"></textarea>
+      </div>
+
+      <!-- Screenshots Section -->
+      <div class="screenshots-section">
+        <h4>Screenshots</h4>
+        <div class="screenshot-list" *ngIf="selectedTicket.screenshots?.length">
+          <a *ngFor="let url of selectedTicket.screenshots" [href]="'http://localhost:8080' + url" target="_blank" class="screenshot-link">
+            📸 View Screenshot
+          </a>
+        </div>
+        <p *ngIf="!selectedTicket.screenshots?.length" class="no-data">No screenshots yet</p>
+        <div class="upload-row">
+          <input type="file" accept="image/*" (change)="onScreenshotFileSelected($event)" />
+          <button class="btn btn-sm btn-outline" (click)="uploadScreenshot()" [disabled]="screenshotUploading">
+            {{ screenshotUploading ? 'Uploading...' : '📤 Upload' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Status History -->
+      <div class="history-section" *ngIf="selectedTicket.statusHistory?.length">
+        <h4>Status History</h4>
+        <div class="history-item" *ngFor="let h of selectedTicket.statusHistory">
+          <span class="history-status" [style.color]="getStatusColor(h.status)">{{ getStatusLabel(h.status) }}</span>
+          <span class="history-date">{{ h.timestamp | date:'medium' }}</span>
+          <span class="history-note" *ngIf="h.note">{{ h.note }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="closeStatusModal()">Cancel</button>
+      <button class="btn btn-primary" (click)="updateStatus()" [disabled]="statusUpdating">
+        {{ statusUpdating ? 'Updating...' : 'Update Status' }}
+      </button>
+    </div>
+  </div>
+</div>

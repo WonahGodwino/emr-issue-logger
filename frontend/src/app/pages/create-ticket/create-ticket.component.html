@@ -1,1 +1,87 @@
-﻿<div class='page-container'><h2>CreateTicket</h2><p>Content coming soon.</p></div>
+﻿<div class="page-container">
+  <div class="page-header">
+    <h2>Create New Ticket</h2>
+    <p class="subtitle">Report an EMR issue from your facility</p>
+  </div>
+
+  <div class="form-card">
+    <!-- State → Facility -->
+    <div class="form-grid">
+      <div class="form-group">
+        <label>State</label>
+        <select [(ngModel)]="selectedStateId" (change)="onStateChange()">
+          <option value="">-- Select State --</option>
+          <option *ngFor="let s of states" [value]="s.stateId">{{ s.name }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Facility *</label>
+        <select [(ngModel)]="form.facilityId" [disabled]="!selectedStateId">
+          <option value="">-- Select Facility --</option>
+          <option *ngFor="let f of facilities" [value]="f.facilityId">{{ f.name }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Title -->
+    <div class="form-group">
+      <label>Title *</label>
+      <input type="text" [(ngModel)]="form.title" placeholder="Brief summary of the issue" />
+    </div>
+
+    <!-- Module + Category -->
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Module *</label>
+        <select [(ngModel)]="form.module">
+          <option *ngFor="let m of modules" [value]="m.value">{{ m.label }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Category *</label>
+        <select [(ngModel)]="form.category">
+          <option *ngFor="let c of categories" [value]="c.value">{{ c.label }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Issue -->
+    <div class="form-group">
+      <label>Issue *</label>
+      <input type="text" [(ngModel)]="form.issue" placeholder="Specific issue encountered" />
+    </div>
+
+    <!-- Description -->
+    <div class="form-group">
+      <label>Description *</label>
+      <textarea [(ngModel)]="form.description" rows="5" placeholder="Detailed description of the problem, steps to reproduce, and expected outcome"></textarea>
+    </div>
+
+    <!-- Impact + Requirement -->
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Order of Impact (1-5) *</label>
+        <select [(ngModel)]="form.orderOfImpact">
+          <option [value]="1">1 - Low</option>
+          <option [value]="2">2 - Minor</option>
+          <option [value]="3">3 - Moderate</option>
+          <option [value]="4">4 - High</option>
+          <option [value]="5">5 - Critical</option>
+        </select>
+      </div>
+      <div class="form-group form-check">
+        <label>&nbsp;</label>
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="form.isNewRequirement" />
+          <span>This is a new feature requirement</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" (click)="submit()" [disabled]="loading">
+        {{ loading ? 'Submitting...' : 'Submit Ticket' }}
+      </button>
+    </div>
+  </div>
+</div>
