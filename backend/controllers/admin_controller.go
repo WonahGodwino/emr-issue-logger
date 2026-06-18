@@ -100,6 +100,46 @@ func (ac *AdminController) GetAllTickets(c *gin.Context) {
     c.JSON(http.StatusOK, responses)
 }
 
+func (ac *AdminController) AssignStatesToAdmin(c *gin.Context) {
+    userID := c.Param("userId")
+
+    var req struct {
+        StateIDs []string `json:"stateIds" binding:"required"`
+    }
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    col := ac.DB.Bucket.DefaultCollection()
+    getResult, err := col.Get("user::"+userID, nil)
+    if err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+        return
+    }
+
+    var user models.User
+    if err := getResult.Content(&user); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read user"})
+        return
+    }
+
+    if user.Role != models.RoleAdmin {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "User must be an ADMIN to assign states"})
+        return
+    }
+
+    user.StateIDs = req.StateIDs
+    user.UpdatedAt = time.Now()
+
+    if _, err := col.Replace(user.ID, user, nil); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to assign states"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "States assigned successfully", "user": user.ToResponse()})
+}
+
 func (ac *AdminController) AssignTicket(c *gin.Context) {
     ticketID := c.Param("id")
     var req struct {

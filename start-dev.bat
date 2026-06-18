@@ -13,7 +13,7 @@ echo.
 :: --- Backend ---
 echo [1/2] Building Backend...
 cd /d "%PROJECT_DIR%backend"
-go build -o server.exe ./cmd/server/
+go build -C "%PROJECT_DIR%backend" -o server.exe .\cmd\server\
 if %ERRORLEVEL% NEQ 0 (
     echo       ERROR: Backend build failed! Check Go errors above.
     pause

@@ -51,6 +51,8 @@ func SetupRouter(cfg *config.Config, db *database.CouchbaseDB) *gin.Engine {
                 tickets.GET("", ticketController.GetTickets)
                 tickets.GET("/:id", ticketController.GetTicket)
                 tickets.PUT("/:id", ticketController.UpdateTicket)
+                tickets.POST("/:id/status", ticketController.UpdateTicketStatus)
+                tickets.POST("/:id/screenshots", ticketController.UploadScreenshot)
                 tickets.DELETE("/:id", ticketController.DeleteTicket)
                 tickets.POST("/:id/recall", ticketController.RecallTicket)
             }
@@ -61,6 +63,7 @@ func SetupRouter(cfg *config.Config, db *database.CouchbaseDB) *gin.Engine {
                 adminController := controllers.NewAdminController(db)
                 admin.GET("/dashboard", adminController.GetDashboardStats)
                 admin.GET("/users", adminController.GetAllUsers)
+                admin.PUT("/users/:userId/states", adminController.AssignStatesToAdmin)
                 admin.GET("/tickets", adminController.GetAllTickets)
                 admin.PUT("/tickets/:id/assign", adminController.AssignTicket)
 

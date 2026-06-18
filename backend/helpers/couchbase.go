@@ -19,19 +19,33 @@ func GetIntFromMap(m map[string]interface{}, key string) int {
     return 0
 }
 
+func GetStringFromMap(m map[string]interface{}, key string) string {
+    return getString(m, key)
+}
+
 func MapToUser(m map[string]interface{}) models.User {
+    stateIDs := []string{}
+    if raw, ok := m["stateIds"].([]interface{}); ok {
+        for _, s := range raw {
+            if str, ok2 := s.(string); ok2 {
+                stateIDs = append(stateIDs, str)
+            }
+        }
+    }
     return models.User{
-        DocType:   getString(m, "docType"),
-        ID:        getString(m, "id"),
-        UserID:    getString(m, "userId"),
-        Username:  getString(m, "username"),
-        Email:     getString(m, "email"),
-        Password:  getString(m, "password"),
-        FullName:  getString(m, "fullName"),
-        Role:      models.UserRole(getString(m, "role")),
-        CreatedAt: getTime(m, "createdAt"),
-        UpdatedAt: getTime(m, "updatedAt"),
-        IsActive:  getBool(m, "isActive"),
+        DocType:    getString(m, "docType"),
+        ID:         getString(m, "id"),
+        UserID:     getString(m, "userId"),
+        Username:   getString(m, "username"),
+        Email:      getString(m, "email"),
+        Password:   getString(m, "password"),
+        FullName:   getString(m, "fullName"),
+        Role:       models.UserRole(getString(m, "role")),
+        StateIDs:   stateIDs,
+        FacilityID: getString(m, "facilityId"),
+        CreatedAt:  getTime(m, "createdAt"),
+        UpdatedAt:  getTime(m, "updatedAt"),
+        IsActive:   getBool(m, "isActive"),
     }
 }
 
@@ -50,26 +64,45 @@ func MapToTicket(m map[string]interface{}) models.Ticket {
         }
     }
 
+    screenshots := []string{}
+    if raw, ok := m["screenshots"].([]interface{}); ok {
+        for _, s := range raw {
+            if str, ok2 := s.(string); ok2 {
+                screenshots = append(screenshots, str)
+            }
+        }
+    }
+
     return models.Ticket{
-        DocType:          getString(m, "docType"),
-        ID:               getString(m, "id"),
-        TicketID:         getString(m, "ticketId"),
-        Title:            getString(m, "title"),
-        Description:      getString(m, "description"),
-        ReporterUserID:   getString(m, "reporterUserId"),
-        Category:         models.TicketCategory(getString(m, "category")),
-        OrderOfImpact:    GetIntFromMap(m, "orderOfImpact"),
-        IsNewRequirement: getBool(m, "isNewRequirement"),
-        Status:           models.TicketStatus(getString(m, "status")),
-        StatusHistory:    statusHistory,
-        AssignedTo:       getString(m, "assignedTo"),
-        ResolutionNotes:  getString(m, "resolutionNotes"),
-        CreatedAt:        getTime(m, "createdAt"),
-        UpdatedAt:        getTime(m, "updatedAt"),
-        ResolvedAt:       getTimePtr(m, "resolvedAt"),
-        IsRecalled:       getBool(m, "isRecalled"),
-        RecalledAt:       getTimePtr(m, "recalledAt"),
-        RecallReason:     getString(m, "recallReason"),
+        DocType:           getString(m, "docType"),
+        ID:                getString(m, "id"),
+        TicketID:          getString(m, "ticketId"),
+        Title:             getString(m, "title"),
+        Description:       getString(m, "description"),
+        Issue:             getString(m, "issue"),
+        Module:            models.TicketModule(getString(m, "module")),
+        ReporterUserID:    getString(m, "reporterUserId"),
+        FacilityID:        getString(m, "facilityId"),
+        StateID:           getString(m, "stateId"),
+        Category:          models.TicketCategory(getString(m, "category")),
+        OrderOfImpact:     GetIntFromMap(m, "orderOfImpact"),
+        IsNewRequirement:  getBool(m, "isNewRequirement"),
+        Status:            models.TicketStatus(getString(m, "status")),
+        StatusHistory:     statusHistory,
+        AssignedTo:        getString(m, "assignedTo"),
+        ResolutionNotes:   getString(m, "resolutionNotes"),
+        EscalationComment: getString(m, "escalationComment"),
+        Screenshots:       screenshots,
+        CreatedAt:         getTime(m, "createdAt"),
+        CreatedBy:         getString(m, "createdBy"),
+        UpdatedAt:         getTime(m, "updatedAt"),
+        UpdatedBy:         getString(m, "updatedBy"),
+        AdminUpdatedAt:    getTimePtr(m, "adminUpdatedAt"),
+        UpdatedByAdmin:    getString(m, "updatedByAdmin"),
+        ResolvedAt:        getTimePtr(m, "resolvedAt"),
+        IsRecalled:        getBool(m, "isRecalled"),
+        RecalledAt:        getTimePtr(m, "recalledAt"),
+        RecallReason:      getString(m, "recallReason"),
     }
 }
 

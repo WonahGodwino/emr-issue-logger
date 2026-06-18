@@ -5,21 +5,27 @@ import { environment } from '../../../environments/environment';
 
 export interface Ticket {
   id: string; ticketId: string; title: string; description: string;
-  reporterUserId: string; category: string; orderOfImpact: number;
+  issue: string; module: string; reporterUserId: string;
+  facilityId: string; stateId: string;
+  category: string; orderOfImpact: number;
   isNewRequirement: boolean; status: string; statusHistory: any[];
-  assignedTo?: string; resolutionNotes?: string; createdAt: string;
-  updatedAt: string; resolvedAt?: string; isRecalled: boolean;
+  assignedTo?: string; resolutionNotes?: string;
+  escalationComment?: string; screenshots?: string[];
+  createdAt: string; createdBy: string;
+  updatedAt: string; updatedBy: string;
+  adminUpdatedAt?: string; updatedByAdmin?: string;
+  resolvedAt?: string; isRecalled: boolean;
   recalledAt?: string; recallReason?: string;
 }
 
 export interface CreateTicketRequest {
-  title: string; description: string; category: string;
-  orderOfImpact: number; isNewRequirement: boolean;
+  title: string; description: string; issue: string;
+  module: string; facilityId: string;
+  category: string; orderOfImpact: number; isNewRequirement: boolean;
 }
 
-export interface TicketFilter {
-  status?: string[]; category?: string[]; reporter?: string;
-  sort?: string; page?: number; limit?: number;
+export interface UpdateStatusRequest {
+  status: string; resolutionNotes?: string; escalationComment?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -30,17 +36,16 @@ export class TicketService {
     return this.http.post<Ticket>(`${environment.apiUrl}/tickets`, data);
   }
 
-  getTickets(filter?: TicketFilter): Observable<any> {
+  getTickets(filters?: { dateFrom?: string; dateTo?: string; status?: string; stateId?: string; facilityId?: string }): Observable<{ tickets: Ticket[]; count: number }> {
     let params = new HttpParams();
-    if (filter) {
-      if (filter.status) filter.status.forEach(s => params = params.append('status', s));
-      if (filter.category) filter.category.forEach(c => params = params.append('category', c));
-      if (filter.reporter) params = params.set('reporter', filter.reporter);
-      if (filter.sort) params = params.set('sort', filter.sort);
-      if (filter.page) params = params.set('page', filter.page.toString());
-      if (filter.limit) params = params.set('limit', filter.limit.toString());
+    if (filters) {
+      if (filters.dateFrom) params = params.set('dateFrom', filters.dateFrom);
+      if (filters.dateTo) params = params.set('dateTo', filters.dateTo);
+      if (filters.status) params = params.set('status', filters.status);
+      if (filters.stateId) params = params.set('stateId', filters.stateId);
+      if (filters.facilityId) params = params.set('facilityId', filters.facilityId);
     }
-    return this.http.get(`${environment.apiUrl}/tickets`, { params });
+    return this.http.get<{ tickets: Ticket[]; count: number }>(`${environment.apiUrl}/tickets`, { params });
   }
 
   getTicket(id: string): Observable<Ticket> {
@@ -49,6 +54,16 @@ export class TicketService {
 
   updateTicket(id: string, data: any): Observable<Ticket> {
     return this.http.put<Ticket>(`${environment.apiUrl}/tickets/${id}`, data);
+  }
+
+  updateTicketStatus(id: string, data: UpdateStatusRequest): Observable<Ticket> {
+    return this.http.post<Ticket>(`${environment.apiUrl}/tickets/${id}/status`, data);
+  }
+
+  uploadScreenshot(id: string, file: File): Observable<{ screenshotUrl: string; ticket: Ticket }> {
+    const formData = new FormData();
+    formData.append('screenshot', file);
+    return this.http.post<{ screenshotUrl: string; ticket: Ticket }>(`${environment.apiUrl}/tickets/${id}/screenshots`, formData);
   }
 
   deleteTicket(id: string): Observable<any> {
@@ -61,5 +76,18 @@ export class TicketService {
 
   getDashboardStats(): Observable<any> {
     return this.http.get(`${environment.apiUrl}/admin/dashboard`);
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class AdminService {
+  constructor(private http: HttpClient) {}
+
+  getUsers(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/admin/users`);
+  }
+
+  assignStatesToAdmin(userId: string, stateIds: string[]): Observable<any> {
+    return this.http.put(`${environment.apiUrl}/admin/users/${userId}/states`, { stateIds });
   }
 }
