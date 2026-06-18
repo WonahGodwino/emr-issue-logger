@@ -23,7 +23,7 @@
       </thead>
       <tbody>
         <tr *ngFor="let user of users">
-          <td class="name-cell">{{ user.fullName }}<br /><span class="username">@{{ user.username }}</span></td>
+          <td class="name-cell">{{ user.fullName }}<br /><span class="username">{{ '@' + user.username }}</span></td>
           <td>{{ user.email }}</td>
           <td><span class="role-badge" [class.admin]="user.role==='admin'" [ngClass]="{'super-admin': user.role==='super_admin'}">{{ getRoleBadge(user.role) }}</span></td>
           <td>
