@@ -96,7 +96,7 @@ export class ManageTicketsComponent implements OnInit {
 
   updateStatus(): void {
     if (!this.selectedTicket) return;
-    if (this.statusForm.status === 'escalated' && !this.statusForm.escalationComment.trim()) {
+    if (this.statusForm.status === 'escalated' && !this.statusForm.escalationComment?.trim()) {
       this.toast.showError('Escalation requires a comment');
       return;
     }
