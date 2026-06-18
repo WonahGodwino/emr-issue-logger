@@ -80,7 +80,8 @@ export class CreateTicketComponent implements OnInit {
       return;
     }
     this.loading = true;
-    this.ticketService.createTicket(this.form).subscribe({
+    const payload = { ...this.form, orderOfImpact: Number(this.form.orderOfImpact) };
+    this.ticketService.createTicket(payload).subscribe({
       next: (ticket) => {
         this.loading = false;
         this.toast.showSuccess(`Ticket #${ticket.ticketId} created`);

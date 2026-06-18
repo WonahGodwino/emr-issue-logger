@@ -62,11 +62,11 @@
       <div class="form-group">
         <label>Order of Impact (1-5) *</label>
         <select [(ngModel)]="form.orderOfImpact">
-          <option [value]="1">1 - Low</option>
-          <option [value]="2">2 - Minor</option>
-          <option [value]="3">3 - Moderate</option>
-          <option [value]="4">4 - High</option>
-          <option [value]="5">5 - Critical</option>
+          <option [ngValue]="1">1 - Low</option>
+          <option [ngValue]="2">2 - Minor</option>
+          <option [ngValue]="3">3 - Moderate</option>
+          <option [ngValue]="4">4 - High</option>
+          <option [ngValue]="5">5 - Critical</option>
         </select>
       </div>
       <div class="form-group form-check">
