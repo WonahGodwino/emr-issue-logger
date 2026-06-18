@@ -216,7 +216,7 @@ func (tc *TicketController) GetTickets(c *gin.Context) {
         params["facilityFilter"] = facilityFilter
     }
 
-    query = "SELECT t.* FROM `" + tc.DB.Config.CouchbaseBucket + "` AS t WHERE " + strings.Join(conditions, " AND ") + " ORDER BY t.createdAt DESC"
+    query = "SELECT * FROM `" + tc.DB.Config.CouchbaseBucket + "` WHERE " + strings.Join(conditions, " AND ") + " ORDER BY createdAt DESC"
 
     if params == nil { params = map[string]interface{}{} }
 
