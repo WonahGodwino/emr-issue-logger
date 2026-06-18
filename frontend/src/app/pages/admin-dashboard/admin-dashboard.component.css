@@ -1,1 +1,17 @@
-﻿
+﻿.page-container { padding: 24px; max-width: 1100px; margin: 0 auto; }
+.page-header { margin-bottom: 24px; }
+.page-header h2 { font-size: 24px; font-weight: 700; color: #111827; margin: 0; }
+.page-header .subtitle { color: #6b7280; font-size: 14px; margin: 4px 0 0 0; }
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+.stat-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; text-align: center; }
+.num { display: block; font-size: 36px; font-weight: 800; color: #096D49; }
+.label { display: block; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; }
+.stat-card.pending .num { color: #f59e0b; }
+.stat-card.review .num { color: #3b82f6; }
+.stat-card.resolved .num { color: #10b981; }
+.stat-card.recalled .num { color: #ef4444; }
+.links { display: flex; gap: 16px; }
+.btn { padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+.btn-primary { background: #096D49; color: #fff; }
+.btn-outline { background: #fff; color: #096D49; border: 2px solid #096D49; }
+@media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr 1fr; } }

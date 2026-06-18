@@ -1,1 +1,29 @@
-﻿
+﻿.page-container { padding: 24px; max-width: 900px; margin: 0 auto; }
+.loading, .empty { text-align: center; padding: 48px; color: #9ca3af; }
+.detail-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px; }
+.header-row { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+.header-row h2 { font-size: 22px; font-weight: 700; color: #111827; margin: 0; }
+.status { padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: capitalize; }
+.id { color: #9ca3af; font-size: 13px; font-family: 'Consolas', monospace; margin: 0 0 24px 0; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; }
+.field span, .field p { font-size: 14px; color: #374151; margin: 0; }
+.block { margin-bottom: 20px; }
+.block p { line-height: 1.6; white-space: pre-wrap; }
+.escalated { background: #fef2f2; padding: 16px; border-radius: 8px; border-left: 4px solid #ef4444; }
+.screenshots { margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
+.screenshots label { font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 12px; }
+.img-grid { display: flex; gap: 12px; flex-wrap: wrap; }
+.screenshot { max-width: 200px; max-height: 200px; border-radius: 8px; border: 1px solid #e5e7eb; cursor: pointer; }
+.history { margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
+.history h3 { font-size: 15px; font-weight: 600; color: #374151; margin: 0 0 12px 0; }
+.history-item { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f9fafb; font-size: 13px; align-items: baseline; }
+.h-status { font-weight: 600; min-width: 100px; }
+.h-date { color: #9ca3af; white-space: nowrap; }
+.h-note { color: #6b7280; }
+.actions { display: flex; gap: 12px; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
+.btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; text-decoration: none; display: inline-flex; align-items: center; }
+.btn-primary { background: #096D49; color: #fff; }
+.btn-primary:hover { background: #0a7d55; }
+.btn-outline { background: #fff; color: #096D49; border: 2px solid #096D49; }

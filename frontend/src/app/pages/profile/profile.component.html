@@ -1,1 +1,12 @@
-﻿<div class='page-container'><h2>Profile</h2><p>Content coming soon.</p></div>
+﻿<div class="page-container">
+  <div class="page-header"><h2>My Profile</h2></div>
+  <div *ngIf="user" class="profile-card">
+    <div class="role-badge">{{ user.role }}</div>
+    <div class="form-group"><label>Full Name</label><input type="text" [(ngModel)]="form.fullName" /></div>
+    <div class="form-group"><label>Username</label><input type="text" [(ngModel)]="form.username" /></div>
+    <div class="form-group"><label>Email</label><input type="email" [(ngModel)]="form.email" disabled /></div>
+    <div *ngIf="user.stateIds?.length" class="form-group"><label>Assigned States</label><p>{{ user.stateIds.join(', ') }}</p></div>
+    <div *ngIf="user.facilityId" class="form-group"><label>Facility</label><p>{{ user.facilityId }}</p></div>
+    <div class="form-actions"><button class="btn btn-primary" (click)="save()" [disabled]="saving">{{ saving ? 'Saving...' : 'Update Profile' }}</button></div>
+  </div>
+</div>

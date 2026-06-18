@@ -1,1 +1,12 @@
-﻿<div class='page-container'><h2>EditTicket</h2><p>Content coming soon.</p></div>
+﻿<div class="page-container">
+  <div class="page-header"><h2>Edit Ticket</h2><a routerLink="/tickets/{{ ticket?.ticketId }}" class="btn btn-outline">← Back</a></div>
+  <div *ngIf="loading" class="loading">Loading...</div>
+  <div *ngIf="!loading && ticket" class="form-card">
+    <div class="form-group"><label>Title *</label><input type="text" [(ngModel)]="form.title" /></div>
+    <div class="form-row"><div class="form-group"><label>Module</label><select [(ngModel)]="form.module"><option *ngFor="let m of modules" [value]="m.value">{{ m.label }}</option></select></div><div class="form-group"><label>Category</label><select [(ngModel)]="form.category"><option *ngFor="let c of categories" [value]="c.value">{{ c.label }}</option></select></div></div>
+    <div class="form-group"><label>Issue</label><input type="text" [(ngModel)]="form.issue" /></div>
+    <div class="form-group"><label>Description</label><textarea [(ngModel)]="form.description" rows="5"></textarea></div>
+    <div class="form-group"><label>Order of Impact</label><select [(ngModel)]="form.orderOfImpact"><option [ngValue]="1">1 - Low</option><option [ngValue]="2">2</option><option [ngValue]="3">3</option><option [ngValue]="4">4</option><option [ngValue]="5">5 - Critical</option></select></div>
+    <div class="form-actions"><button class="btn btn-primary" (click)="save()" [disabled]="saving">{{ saving ? 'Saving...' : 'Save Changes' }}</button></div>
+  </div>
+</div>

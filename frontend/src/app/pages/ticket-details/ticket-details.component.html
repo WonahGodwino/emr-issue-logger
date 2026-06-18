@@ -1,1 +1,16 @@
-﻿<div class='page-container'><h2>TicketDetails</h2><p>Content coming soon.</p></div>
+﻿<div class="page-container">
+  <div *ngIf="loading" class="loading">Loading...</div>
+  <div *ngIf="!loading && ticket" class="detail-card">
+    <div class="header-row"><h2>{{ ticket.title }}</h2><span class="status" [style.background]="getStatusColor(ticket.status)+'20'" [style.color]="getStatusColor(ticket.status)">{{ getStatusLabel(ticket.status) }}</span></div>
+    <p class="id">#{{ ticket.ticketId }}</p>
+    <div class="grid"><div class="field"><label>Module</label><span>{{ ticket.module }}</span></div><div class="field"><label>Category</label><span>{{ ticket.category }}</span></div><div class="field"><label>Order of Impact</label><span>{{ ticket.orderOfImpact }}/5</span></div><div class="field"><label>Created By</label><span>{{ ticket.createdBy }}</span></div><div class="field"><label>Created</label><span>{{ ticket.createdAt | date:'medium' }}</span></div><div class="field"><label>Updated</label><span>{{ ticket.updatedAt | date:'medium' }}</span></div></div>
+    <div class="field block"><label>Issue</label><p>{{ ticket.issue }}</p></div>
+    <div class="field block"><label>Description</label><p>{{ ticket.description }}</p></div>
+    <div *ngIf="ticket.resolutionNotes" class="field block"><label>Resolution Notes</label><p>{{ ticket.resolutionNotes }}</p></div>
+    <div *ngIf="ticket.escalationComment" class="field block escalated"><label>Escalation Comment</label><p>{{ ticket.escalationComment }}</p></div>
+    <div *ngIf="ticket.screenshots?.length" class="screenshots"><label>Screenshots</label><div class="img-grid"><img *ngFor="let url of ticket.screenshots" [src]="'http://localhost:8080' + url" class="screenshot" /></div></div>
+    <div *ngIf="ticket.statusHistory?.length" class="history"><h3>Status History</h3><div class="history-item" *ngFor="let h of ticket.statusHistory"><span class="h-status" [style.color]="getStatusColor(h.status)">{{ getStatusLabel(h.status) }}</span><span class="h-date">{{ h.timestamp | date:'medium' }}</span><span class="h-note" *ngIf="h.note">{{ h.note }}</span></div></div>
+    <div class="actions"><a [routerLink]="['/tickets', ticket.ticketId, 'edit']" class="btn btn-primary">Edit Ticket</a><a routerLink="/tickets" class="btn btn-outline">Back</a></div>
+  </div>
+  <div *ngIf="!loading && !ticket" class="empty"><p>Ticket not found.</p></div>
+</div>

@@ -1,1 +1,12 @@
-﻿<div class='page-container'><h2>AdminDashboard</h2><p>Content coming soon.</p></div>
+﻿<div class="page-container">
+  <div class="page-header"><h2>Admin Dashboard</h2><p class="subtitle">System overview</p></div>
+  <div class="stats-grid">
+    <div class="stat-card"><span class="num">{{stats.totalTickets}}</span><span class="label">Total Tickets</span></div>
+    <div class="stat-card pending"><span class="num">{{stats.pendingTickets}}</span><span class="label">Pending</span></div>
+    <div class="stat-card review"><span class="num">{{stats.inProgressTickets}}</span><span class="label">In Progress</span></div>
+    <div class="stat-card resolved"><span class="num">{{stats.resolvedTickets}}</span><span class="label">Resolved</span></div>
+    <div class="stat-card recalled"><span class="num">{{stats.recalledTickets}}</span><span class="label">Recalled</span></div>
+    <div class="stat-card"><span class="num">{{stats.totalUsers}}</span><span class="label">Total Users</span></div>
+  </div>
+  <div class="links"><a routerLink="/admin/tickets" class="btn btn-primary">Manage Tickets</a><a routerLink="/admin/users" class="btn btn-outline">Manage Users</a></div>
+</div>
